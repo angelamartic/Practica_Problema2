@@ -1,0 +1,28 @@
+---
+title: "Problema 2 - Sergio Rivadulla, Jaume Maimó i Àngela Martí "
+subtitle: "20582- Análisis de Datos para el GMAT"
+format:
+  html:
+    theme: lumen
+    toc: true
+    toc-depth: 3
+    embed-resources: true
+editor: 
+  markdown: 
+    wrap: sentence
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r, echo=FALSE, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(GGally)
+library(Hotelling)
+library(MASS)
+library(readr)
+library(tidyr)
+```
