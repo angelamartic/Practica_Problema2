@@ -29,14 +29,14 @@ library(tidyr)
 
 # Problema 2
 
-**El metabolismo se caracteriza por reacciones químicas vinculadas entre sí, creando una compleja estructura de red. Una representación simplificada del metabolismo, que denominamos red metabólica abstracta, es un grafo en el que las vías metabólicas son nodos y existe una arista entre dos nodos si sus correspondientes vías comparten uno o más compuestos.**
+**El metabolisme es caracteritza per reaccions químiques vinculades entre si, creant una complexa estructura de xarxa. Una representació simplificada del metabolisme, que anomenem xarxa metabòlica abstracta, és un graf en què les vies metabòliques són nodes i hi ha una aresta entre dos nodes si les corresponents vies comparteixen un o més compostos.**
 
-**Para explorar los potenciales y límites de una representación tan básica, hemos empleado tres tipos de kernels (distancias entre grafos):**
+**Per explorar els potencials i els límits d'una representació tan bàsica, hem fet servir tres tipus de kernels (distàncies entre grafs):**
 
--   **VH (Vertex histogram): solo tiene en cuenta si las etiquetas de los nodos de los grafos que se comparan son iguales o no.**
+-   **VH (Vertex histogram): només té en compte si les etiquetes dels nodes dels grafs que es comparen són iguals o no.**
 
--   **SP (Shortest-Path): compara los grafos en función de sus caminos más cortos. Intuitivamente, esto significa medir lo fácil o difícil que es conectar, a través de compuestos compartidos, parejas de caminos en los dos grafos.**
+-   **SP (Shortest-Path): compara els grafs en funció dels camins més curts. Intuïtivament, això significa mesurar com és de fàcil o difícil connectar, a través de compostos compartits, parelles de camins en els dos grafs.**
 
--   **PM (Pyramid Match): mide la similitud de las características topológicas (por ejemplo, la conectividad) de los nodos con la misma etiqueta en los dos grafos comparados.**
+-   **PM (Pyramid Match): mesura la similitud de les característiques topològiques (per exemple, la connectivitat) dels nodes amb la mateixa etiqueta als dos grafs comparats.**
 
-**La práctica consiste en representar gráficamente (con solo 2 coordenadas principales) las matrices de similitud generadas por cada kernel coloreando los puntos de acuerdo al grupo de animales de acuerdo a su phylum.**
+**La pràctica consisteix a representar gràficament (amb només 2 coordenades principals) les matrius de similitud generades per cada nucli pintant els punts d'acord amb el grup d'animals d'acord amb el seu phylum.**
