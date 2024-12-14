@@ -25,6 +25,10 @@ library(Hotelling)
 library(MASS)
 library(readr)
 library(tidyr)
+library(factoextra)
+library(ggfortify)
+library(MVA)
+library(vegan)
 ```
 
 # Problema 2
@@ -40,3 +44,49 @@ library(tidyr)
 -   **PM (Pyramid Match): mesura la similitud de les característiques topològiques (per exemple, la connectivitat) dels nodes amb la mateixa etiqueta als dos grafs comparats.**
 
 **La pràctica consisteix a representar gràficament (amb només 2 coordenades principals) les matrius de similitud generades per cada nucli pintant els punts d'acord amb el grup d'animals d'acord amb el seu phylum.**
+
+```{r}
+phylum <- read.csv("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/fileListANIMAL_phylum.txt", header = F)
+
+VH <- read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixVH.txt")
+VH <- VH %>% as.matrix()
+
+SP <- read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixSP.txt")
+SP <- SP %>% as.matrix()
+
+PM <- read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixPM.txt")
+PM <- PM %>% as.matrix()
+
+```
+
+```{r}
+mds1 <- isoMDS(VH)
+puntos <- mds1$points
+mds <- as_tibble(puntos)
+mds
+colnames(mds) <- c("Dim1","Dim2")
+# Plot MDS
+ggscatter(mds, x = "Dim.1", y = "Dim.2",
+          size = 1,
+          repel = TRUE)
+```
+
+
+Les tres matrius són de similituds, per tant, haurem de realitzar un *MDS no mètric*
+
+```{r}
+mds1 <- cmdscale(1-VH, k=2)
+plot(mds1)
+M <- metaMDS(VH, k=2)
+stressplot(M)
+M$stress
+1-VH
+VH
+```
+
+```{r}
+MDS <- isoMDS(VH, k=2)
+MDS
+```
+
+
