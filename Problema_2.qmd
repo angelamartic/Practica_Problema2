@@ -29,6 +29,8 @@ library(factoextra)
 library(ggfortify)
 library(MVA)
 library(vegan)
+library(kernlab)
+library(Rtsne)
 ```
 
 # Problema 2
@@ -45,6 +47,10 @@ library(vegan)
 
 **La pràctica consisteix a representar gràficament (amb només 2 coordenades principals) les matrius de similitud generades per cada nucli pintant els punts d'acord amb el grup d'animals d'acord amb el seu phylum.**
 
+# Resolem
+
+En primer lloc, llegirem el fitcher adjuntat a eula digital i definirem les variables que necessite, és a dir les que ens defieix l'enunciat.
+
 ```{r}
 phylum <- read.csv("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/fileListANIMAL_phylum.txt", header = F)
 
@@ -59,6 +65,149 @@ PM <- PM %>% as.matrix()
 
 ```
 
+Seguidament comprovarem les dimendions de cada una de les 3 variables:
+
+```{r}
+# Comprovar dimensions
+dim(VH)
+dim(SP)
+dim(PM)
+
+# Comprovar el phylum
+head(phylum)
+
+
+```
+
+Vegem que totes tenen les mateixes dimensions, per tant ara , anam a comprovar si la matriu es simètrica, per veure si em d'aplicar un *ACP*, que tranforma les nostres dades a una representació en 2D, en cas que no funcione, o que no traguem conclusions, o si em d'utilitzar un MDS.
+
+Però com que:
+
+```{r}
+isSymmetric(VH)
+isSymmetric(SP)
+isSymmetric(PM)
+
+
+```
+
+Llavors, reduïm la dimensionalitat de les matrius utilitzant ACP(jo aquí posaría algo de teoria, es a dir la definicio o fórmula):
+
+```{r}
+# ACP per a cada matriu
+pca_vh <- prcomp(VH, center = TRUE, scale. = TRUE)
+pca_sp <- prcomp(SP, center = TRUE, scale. = TRUE)
+pca_pm <- prcomp(PM, center = TRUE, scale. = TRUE)
+
+```
+
+Ara, per teoria, un resumenràpid per veure quina tècnica és la més convenient aplicar, sabem que: - ACP: Si les matrius són euclidianes i tenen valors propis positius.
+- MDS Clàssic: Si tenen alguns valors propis negatius però el stress és baix.
+- MDS No Métric: Si l'stress és alt o les dades semblen tenir relacions no lineals.
+
+Comprovem que és el més adecuat:
+
+```{r}
+# Estadístiques bàsiques
+summary(as.vector(VH))
+summary(as.vector(SP))
+summary(as.vector(PM))
+
+# Comprovació de simetria
+all(VH == t(VH)) 
+all(SP == t(SP)) 
+all(PM == t(PM)) 
+
+```
+
+Les matrius són simètriques (TRUE), això és un bon indicador per a aplicar les técniques ACP o MDS
+
+Comprovem la propietat d'embedding euclidià, utilitzant l'anàlisi de valor propis per veure si la matriu es positiva definida:
+
+```{r}
+
+eigen_VH <- eigen(VH)$values
+eigen_SP <- eigen(SP)$values
+eigen_PM <- eigen(PM)$values
+
+# Comprovació de valors propis
+min(eigen_VH)
+min(eigen_SP)
+min(eigen_PM)
+```
+
+Els valors propis mínims són molt propers a zero, això indica que les matrius són gairebé positives semidefinides.
+
+Per ùltim comprovarem la linearitat:
+
+```{r,echo=FALSE}
+stress_VH <- metaMDS(VH, k = 2, trymax = 100)$stress
+stress_SP <- metaMDS(SP, k = 2, trymax = 100)$stress
+stress_PM <- metaMDS(PM, k = 2, trymax = 100)$stress
+
+stress_VH
+stress_SP
+stress_PM
+
+```
+
+Aleshores, com el stress és $>0.1$, indica que l'MDS no mètric serà més adequat per capturar relacions no lineals.
+
+Ara, per assegurar-nos que la millor tèctica és el MDS no mètric, el que farem serà comparar el procediment d'aplicar MDS no mètric amb el de l'aplicació de MDS clàssic:
+
+```{r}
+mds1 <- cmdscale(1-VH, k=2) #Escalament Multidimensional Clàssic
+plot(mds1) #Mostra els resultats en 2D del MDS clàssic
+```
+
+Aquest gràfic representa els punts en un espai reduït de dues dimensions obtingut mitjançant MDS clàssic.
+
+Els punts estan força dispersos, amb una lleugera tendència diagonal negativa. Això suggereix que les dues dimensions capturen algunes estructures de variació importants.
+La presència d'alguns punts més allunyats de la resta indica que hi pot haver diferències més marcades entre alguns grups d'elements.
+
+El MDS clàssic pot haver capturat només una part de les variacions de les dades originals (atès que el MDS clàssic assumeix distàncies euclidianes).
+
+
+```{r}
+M <- metaMDS(VH, k=2) #plica un MDS no mètric
+stressplot(M)
+
+```
+
+Aquest gràfic mostra la relació entre les dissimilituds observades (eix X) i les distàncies calculades en l'espai reduït del MDS (eix Y).
+Les característiques del gràfic són les següents:
+
+-   Línia vermella (ajust no mètric): Aquesta representa l'ajust entre les dades originals i les distàncies en l'espai reduït.
+    El R² no mètric (0.911) indica que hi ha una forta correlació entre les similituds originals i les distàncies ordinals calculades, el quqal suggereix que l'espai MDS no mètric captura molt bé les relacions de dissimilitud de les dades originals.
+
+-   Línia blava vertical i punts dispersos:
+
+    Cada punt blau mostra la relació entre una dissimilitud original i la distància ordinal en l'espai MDS.
+    Les línies verticals blaves poden indicar certa variabilitat per a una mateixa dissimilitud observada, cosa que pot passar amb algunes configuracions no mètriques.
+
+-   R² lineal (0.532):
+
+    El baix ajust del model lineal indica que un model lineal no és adequat per capturar aquesta relació.
+    Això justifica l'ús del MDS no mètric, que no assumeix una relació estrictament lineal.
+
+Per tant, aquest gràfic ens indica que la qualitat del model MDS no mètric és alta, ja que el R² no mètric és molt proper a 1.
+Això suggereix que les configuracions en l'espai reduït representen fidelment les relacions de dissimilitud entre els objectes.
+
+```{r}
+#VH
+#1-VH
+
+```
+Aplicam el **MDS no métric**:
+
+
+```{r}
+MDS <- isoMDS(VH, k=2)
+#MDS
+```
+
+SERGI AQUÍ:
+
 ```{r}
 mds1 <- isoMDS(VH)
 puntos <- mds1$points
@@ -71,22 +220,4 @@ ggscatter(mds, x = "Dim.1", y = "Dim.2",
           repel = TRUE)
 ```
 
-
 Les tres matrius són de similituds, per tant, haurem de realitzar un *MDS no mètric*
-
-```{r}
-mds1 <- cmdscale(1-VH, k=2)
-plot(mds1)
-M <- metaMDS(VH, k=2)
-stressplot(M)
-M$stress
-1-VH
-VH
-```
-
-```{r}
-MDS <- isoMDS(VH, k=2)
-MDS
-```
-
-
