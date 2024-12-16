@@ -1,6 +1,6 @@
 ---
 title: "Problema 2 - Sergio Rivadulla, Jaume Maimó i Àngela Martí "
-subtitle: "20582- Análisis de Datos para el GMAT"
+subtitle: "20582- Anàlisis de Dades pel GMAT"
 format:
   html:
     theme: lumen
@@ -65,7 +65,7 @@ PM <- PM %>% as.matrix()
 
 ```
 
-Seguidament comprovarem les dimendions de cada una de les 3 variables:
+Seguidament comprovarem les dimensions de cada una de les 3 variables:
 
 ```{r}
 # Comprovar dimensions
@@ -79,7 +79,7 @@ head(phylum)
 
 ```
 
-Vegem que totes tenen les mateixes dimensions, per tant ara , anam a comprovar si la matriu es simètrica, per veure si em d'aplicar un *ACP*, que tranforma les nostres dades a una representació en 2D, en cas que no funcione, o que no traguem conclusions, o si em d'utilitzar un MDS.
+Vegem que totes tenen les mateixes dimensions, per tant ara , anam a comprovar si la matriu es simètrica, per veure si hem d'aplicar un *ACP*, que tranforma les nostres dades a una representació en 2D, en cas que no funcioni, o en cas de que no treguem conclusions, o si hem d'utilitzar un MDS.
 
 Però com que:
 
@@ -101,11 +101,11 @@ pca_pm <- prcomp(PM, center = TRUE, scale. = TRUE)
 
 ```
 
-Ara, per teoria, un resumenràpid per veure quina tècnica és la més convenient aplicar, sabem que: - ACP: Si les matrius són euclidianes i tenen valors propis positius.
+Ara, per teoria, un resum ràpid per veure quina tècnica és la més convenient aplicar, sabem que: - ACP: Si les matrius són euclidianes i tenen valors propis positius.
 - MDS Clàssic: Si tenen alguns valors propis negatius però el stress és baix.
 - MDS No Métric: Si l'stress és alt o les dades semblen tenir relacions no lineals.
 
-Comprovem que és el més adecuat:
+Comprovem que és el més adecuat:    
 
 ```{r}
 # Estadístiques bàsiques
@@ -138,6 +138,38 @@ min(eigen_PM)
 
 Els valors propis mínims són molt propers a zero, això indica que les matrius són gairebé positives semidefinides.
 
+
+Vegem si realment seria una bona aproximació si ho reduim a dimensió 2:
+```{r}
+vaps_vh <- pca_vh %>% get_eigenvalue()
+vaps_sp <- pca_sp %>% get_eigenvalue()
+vaps_pm <- pca_pm %>% get_eigenvalue()
+
+vaps_vh
+vaps_sp
+vaps_pm
+
+```
+
+Vegem que explicariem aproximadament un 96%, un 93% i un 94% respectivament de solament amb les dues primeres compoments principals. Per tant, és raonable fer l'anàlisi solament amb aquestes components.
+Ho podem veure explícit en el següent gràfic:
+
+```{r}
+fviz_eig(pca_vh, addlabels = TRUE, ylim=c(0,75)) +
+  ggtitle("De les dades de VH") +
+  theme_minimal()
+
+fviz_eig(pca_sp, addlabels = TRUE, ylim=c(0,75))+
+  ggtitle("De les dades de SP") +
+  theme_minimal()
+fviz_eig(pca_pm, addlabels = TRUE, ylim=c(0,75))+
+  ggtitle("De les dades de PM") +
+  theme_minimal()
+
+```
+
+
+
 Per ùltim comprovarem la linearitat:
 
 ```{r,echo=FALSE}
@@ -151,22 +183,36 @@ stress_PM
 
 ```
 
-Aleshores, com el stress és $>0.1$, indica que l'MDS no mètric serà més adequat per capturar relacions no lineals.
+Aleshores, com el stress és $>0.1$, indica que l'MDS no mètric serà més adequat per capturar relacions no lineals. 
+
 
 Ara, per assegurar-nos que la millor tèctica és el MDS no mètric, el que farem serà comparar el procediment d'aplicar MDS no mètric amb el de l'aplicació de MDS clàssic:
 
+
+
 ```{r}
 mds1 <- cmdscale(1-VH, k=2) #Escalament Multidimensional Clàssic
+mds_df <- as.data.frame(mds1)
+phylum$V1 <- gsub("[^0-9]", "", phylum$V1)#llevam el tipus de animal i ens quedam nomes amb el phylum
+resultat <- cbind(mds1, phylum)
+
+colnames(resultat) <- c("x", "y", "color")
+resultat
+
+ggplot(resultat, aes(x = x, y = y, color = color)) +
+  geom_point(size = 3) +   # geom_point crea els punts
+  theme_minimal()
+
 plot(mds1) #Mostra els resultats en 2D del MDS clàssic
 ```
 
 Aquest gràfic representa els punts en un espai reduït de dues dimensions obtingut mitjançant MDS clàssic.
 
-Els punts estan força dispersos, amb una lleugera tendència diagonal negativa. Això suggereix que les dues dimensions capturen algunes estructures de variació importants.
+Els punts estan força dispersos, amb una lleugera tendència diagonal negativa.
+Això suggereix que les dues dimensions capturen algunes estructures de variació importants.
 La presència d'alguns punts més allunyats de la resta indica que hi pot haver diferències més marcades entre alguns grups d'elements.
 
 El MDS clàssic pot haver capturat només una part de les variacions de les dades originals (atès que el MDS clàssic assumeix distàncies euclidianes).
-
 
 ```{r}
 M <- metaMDS(VH, k=2) #plica un MDS no mètric
@@ -198,8 +244,8 @@ Això suggereix que les configuracions en l'espai reduït representen fidelment 
 #1-VH
 
 ```
-Aplicam el **MDS no métric**:
 
+Aplicam el **MDS no métric**:
 
 ```{r}
 MDS <- isoMDS(VH, k=2)
