@@ -175,15 +175,15 @@ Al igual que abans, en primer lloc, calcularem la matriu de similituds obtinguda
 
 ```{r}
 SP = read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixSP.txt")
-head(SP[,1:15], n= 15)
+head(SP[,1:10], n= 10)
 ```
 
 
-A diferència de la matriu de similituds VH, sembla que aquí hi ha una millor distinció, per veurer si és cert, calculem la matriu de distàncies:
+A diferència de la matriu de similituds VH, sembla que aquí hi ha una millor distinció, per veurer si és cert, calculem la matriu de distàncies i mostrem les 5 primeres observacions:
 
 ```{r}
 dist_SP = sqrt(2*(1-SP))
-head(dist_SP[,1:15], n= 15)
+head(dist_SP[,1:5], n= 5)
 ```
 
 Ara, aplicam el mètode de coordenades principals amb la matriu de distància anterior i especificant $k = 2$ per a les coordenades principals i mostram les primeres 5 observacions són:
@@ -193,7 +193,7 @@ SP_mds <- cmdscale(dist_SP, k = 2) %>%
   as_tibble()
 
 SP_mds %>% 
-  slice_head(n = 15)
+  slice_head(n = 5)
 ```
 
 
