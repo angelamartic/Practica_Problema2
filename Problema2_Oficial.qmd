@@ -38,23 +38,60 @@ library(ggpubr)
 
 **La pràctica consisteix a representar gràficament (amb només 2 coordenades principals) les matrius de similitud generades per cada nucli pintant els punts d'acord amb el grup d'animals d'acord amb el seu phylum.**
 
-# Resolem
+# Solució
 
+L'enunciat ens presenta tres matrius de similituds entre grafs. El que farem serà estudiar les distàncies obtingudes de les similituds entre VH, SP, PM, i les representarem a partir de dues coordenades principals.Per finalitzar, compararem l'agrapació obtinguda i l'agrupació que s¡obté amb el phylum, coloretjant els puns en aquesta darrera agrupació.
 
-Al llarg del document estudiarem i representarem les distàncies de les representacions en grafs dels diferents metabolismes que presenten els animals observats. En particular, el que farem serà estudiar les distàncies obtingudes de les similituds entre VH, SP, PM, i les representarem a partir de dues coordenades principals.Per finalitzar, compararem l'agrapació obtinguda i l'agrupació que s¡obté amb el phylum, coloretjant els puns en aquesta darrera agrupació.
-
-Començam llegint el fitchet adjuntat a aula digital i definim la variable phylum.
 
 ```{r}
-phylum <- read.csv("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/fileListANIMAL_phylum.txt")
+phylum <- read.csv("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/fileListANIMAL_phylum.txt", sep = " ", header = F)
+colnames(phylum) <- c("Animal", "phylum")
 ```
 
-En primer lloc, començarem amb la matriu de distàncies obtinguda a partir del métode VH, i mostrarem la matriu de partida, la qual és una ,atriu de similituds entre els primers 15 grafs. 
+La primera matriu que representarem serà la que ens dona el kernel *VH* 
 
 ```{r}
-mat_vh = read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixVH.txt")
-head(mat_vh[,1:15], n= 15)
+VH <- read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixVH.txt")
 ```
+Com hem dit abans, *VH* és una matriu de similitud, per tant tenim que $q_{ii}=1$, $q_{ij}=q_{ji}$ i $0\leq q_{ij}\leq$. Per tant podem calcular la matriu de distàncies associada: 
+
+```{r matriz distancias vh}
+dVH <- 2*(1-VH) %>% sqrt()
+```
+
+A partir d'aquesta matriu de distàncies, podem aplicar l'escalament multidimensional emprant només $2$ components principals.
+
+```{r, warning = FALSE}
+mds_VH <- dVH %>% cmdscale(k = 2) %>% as_tibble()
+```
+
+Ara farem la representació gràfica de les dades pintant els punts d'acord amb el grup d'animals d'acord amb el seu phylum:
+
+```{r}
+colnames(mds_VH) <- c("Dim.1","Dim.2")
+mds_VH <- cbind(mds_VH,phylum)
+mds_VH$phylum <- mds_VH$phylum %>% as.factor()
+ggscatter(mds_VH, x = "Dim.1", y = "Dim.2", color = "phylum", size = 1)
+```
+
+```{r}
+ggplot(mds_VH, aes(x = Dim.1, y = Dim.2, color = phylum)) + geom_point(size = 2) +  
+  labs(title = "Representació del MDS", x = "Dimensió 1", y = "Dimensió 2", color = "Phylum") +
+  theme_minimal()
+```
+
+Predominan los puntos asociados al phylum $101$ y al $106$  ya que son el tipo de phylum predominante en los animales que estamos analizando.
+
+```{r}
+table(phylum$phylum)
+
+```
+
+Notem que realment hauría d'haver 370 punts representats, el que passa és que moltes de les observacions es superposen a la mateixa possició i per tant només en veiem una.
+
+També podem distingir al gràfic sis columnes verticals on s'agrupen els punts (tot i que realment una de les columnes és només un punt), no obstant, hi ha $14$ nivells per al phylum, per tant, la matriu de similitud no manté correctament les agrupacions. Un altre argument que reforça aquesta idea és que tenim punts del mateix phylum que al gràfic es troben clarament dins agrupacions diferents; per exemple els que tenen phylum $106$ o $112$ veim que tenen punts a diferents columnes.
+
+Per tant, amb la matriu proporcionada no podem obtenir una agrupació bona.
 
 Ara, per veurer si realment seria una bona aproximació si ho reduim a dimensió 2, calculant primer els vaps, on vegem que explicariem aproximadament un 96%. 
 
