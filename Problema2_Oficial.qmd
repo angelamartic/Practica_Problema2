@@ -177,26 +177,26 @@ Al igual que abans, en primer lloc, calcularem la matriu de similituds obtinguda
 phylum1 <- read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/fileListANIMAL_phylum.txt")
 ```
 
-```{r, include=FALSE}
-mat_sp = read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixSP.txt")
-head(mat_sp[,1:15], n= 15)
+```{r}
+SP = read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixSP.txt")
+head(SP[,1:15], n= 15)
 ```
 
 
 A diferència de la matriu de similituds VH, sembla que aquí hi ha una millor distinció, per veurer si és cert, calculem la matriu de distàncies:
 
-```{r, include=FALSE}
-dist_sp = sqrt(2*(1-mat_sp))
-head(dist_sp[,1:15], n= 15)
+```{r}
+dist_SP = sqrt(2*(1-SP))
+head(dist_SP[,1:15], n= 15)
 ```
 
 Ara, aplicam el mètode de coordenades principals amb la matriu de distància anterior i especificant $k = 2$ per a les coordenades principals i mostram les primeres 5 observacions són:
 
-```{r, warning = FALSE, include=FALSE}
-sp_mds <- cmdscale(dist_sp, k = 2) %>% 
+```{r, warning = FALSE}
+SP_mds <- cmdscale(dist_SP, k = 2) %>% 
   as_tibble()
 
-sp_mds %>% 
+SP_mds %>% 
   slice_head(n = 15)
 ```
 
@@ -204,18 +204,23 @@ sp_mds %>%
 Finalment, mostrarem el gràfic de la matriu de similitud generada pel **mètode SP** diferenciant pel grup d'animals que pertanyen segons el seu phylum amb el mateix mètode anterior.
 
 ```{r grafico mds sp, fig.height=4, fig.width=6}
-colnames(sp_mds) <- c("Dim.1", "Dim.2")
+colnames(SP_mds) <- c("Dim.1", "Dim.2")
 
-sp_mds_phylum <- bind_cols(sp_mds, phylum1)
+SP_mds_phylum <- bind_cols(sp_mds, phylum1)
 
-sp_mds_phylum$V2 <- as.ordered(sp_mds_phylum$V2) # Para poder colorear los puntos
+SP_mds_phylum$V2 <- as.ordered(SP_mds_phylum$V2) # Para poder colorear los puntos
 
-ggscatter(sp_mds_phylum, x = "Dim.1", y = "Dim.2", size = 1, color = "V2", palette = c("deeppink", "orange", "yellow", "green", "cyan", "blue", "purple", "violetred", "tan4", "orangered", "olivedrab", "black", "cornsilk3", "red4"), title = "MDS Shortest-Path")
+ggscatter(sp_mds_phylum, x = "Dim.1", y = "Dim.2", size = 1, color = "V2", palette = c("deeppink", "orange", "yellow", "green", "cyan", "blue", "purple", "violetred", "tan4", "orangered", "olivedrab", "black", "cornsilk3", "red4"), title = "MDS SP")
 
 ```
 
-
-En aquest gràfic, si no ens fixem en la separació per phylum, podem observar 3 agrupacions, que aproximadament són: una en el rectangle $[-0.3,0]\estafis[-0.2,0.1]$; una altra en el rectangle $[-0.125,0.3]\estafis[0,0.4]$; i l'última en $[0.25,0.5]\estafis[-0.2,0.1]$. Aquesta agrupació mostra més dispersió que en l'anterior, això fa que no es vegin clarament els grups, ja que, per exemple, el rectangle aproximadament $[-0.1,0.1] \estafis [0.2, 0.4]$ sembla ser un altre grup, però no es pot deduir directament, per això, farem les dues interpretacions:
+```{r}
+colnames(SP_mds) <- c("Dim.1","Dim.2")
+SP_mds <- cbind(SP_mds,phylum)
+SP_mds$phylum <- SP_mds$phylum %>% as.factor()
+ggscatter(SP_mds, x = "Dim.1", y = "Dim.2", color = "phylum", size = 1, title = "MDS SP")
+```
+En aquest gràfic, si no ens fixem en la separació per phylum, podem observar 3 agrupacions, que aproximadament són: una en el rectangle $[-0.3,0]\estafis[-0.2,0.1]$; una altra en el rectangle $[-0.125,0.3]\estafis[0,0.4]$; i l'última en $[0.25,0.5]\estafis[-0.2,0.1]$. Aquesta agrupació mostra més dispersió que en el métode anterior, això fa que no es vegin clarament els grups, ja que, per exemple, el rectangle aproximadament $[-0.1,0.1] \estafis [0.2, 0.4]$ sembla ser un altre grup, però no es pot deduir directament, per això, farem les dues interpretacions:
 
 Considerant 3 grups: en aquest cas, tenim que a partir d'aquesta matriu de similituds, s'ha pogut diferenciar pràcticament el grup 101. En canvi, el grup 106 mostra una gran dispersió, comprenent valors en l'interval $[-0.05, 0.5]$ en la primera dimensió, fent que alguns pertanyin al segon grup, i altres en el tercer grup. Finalment, els altres grups estan junts en el grup 2, això pot ser per la falta d'observacions, ja que aquestes observacions poden ser valors atípics i per tant fan semblar que pertanyen a un grup que potser amb una altra mostra no semblaria cert.
 
@@ -223,7 +228,7 @@ Considerant 4 grups: amb aquesta agrupació tenim les mateixes conclusions sobre
 
 Finalment, es torna a observar una tendència dels vertebrats (roses) cap a l'esquerra i dels artròpodes (blaus) cap a la dreta.
 
-Finalment la matriu de similituds obtinguda amb el mètode PM, vam mostrar les relacions entre els 15 primers grafs:
+- **Métode PM:**
 
 ```{r matriz similaridades pm}
 mat_pm = read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixPM.txt")
