@@ -41,7 +41,8 @@ library(factoextra)
 
 # Solució
 
-L'enunciat ens presenta tres matrius de similituds entre grafs. El que farem serà estudiar les distàncies obtingudes de les similituds entre VH, SP, PM, i les representarem a partir de dues coordenades principals.Per finalitzar, compararem l'agrupació obtinguda i l'agrupació que s'obté amb el phylum, coloretjant els puns en aquesta darrera agrupació.
+L'enunciat ens presenta tres matrius de similituds entre grafs.
+El que farem serà estudiar les distàncies obtingudes de les similituds entre VH, SP, PM, i les representarem a partir de dues coordenades principals.Per finalitzar, compararem l'agrupació obtinguda i l'agrupació que s'obté amb el phylum, coloretjant els puns en aquesta darrera agrupació.
 
 ```{r}
 #Llegim la taula on es troben les dades del phylum de cada animal
@@ -54,29 +55,35 @@ phylum %>% glimpse()
 
 **Mètode VH**
 
+En primer lloc, calcularem la matriu de similitud del kernel Vertex histogram
+
 ```{r}
 #Aquesta és la matriu de similitud del kernel Vertex histogram
 VH <- read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixVH.txt")
-VH %>% head()
+VH %>% head(VH[,1:10], n= 10)
 ```
 
-En primer lloc, anem a veure si només dues coordenades principals basten per fer una bona aproximació. Ho veim de forma implícita en el següent gràfic:
+Ara, anem a veure si només dues coordenades principals basten per fer una bona aproximació.
+Ho veim de forma implícita en el següent gràfic:
 
 ```{r}
 # ACP per a la matriu de similitud
-acpVH <- prcomp(mat_vh, center = TRUE, scale. = TRUE)
+acpVH <- prcomp(VH, center = TRUE, scale. = TRUE)
 fviz_eig(acpVH, addlabels = TRUE, ylim=c(0,90)) +
   ggtitle("De les dades de VH") +
   theme_minimal()
 ```
 
-Podem veure que amb dues coordenades principals estaríem explicant aproximadament un $95.7%$ de la variabilitat. Per tant, en principi basten només dues. Anem ara a fer la representació.
+Podem veure que amb dues coordenades principals estaríem explicant aproximadament un $95.7%$ de la variabilitat.
+Per tant, en principi basten només dues.
+Anem ara a fer la representació.
 
-Com hem dit abans, *VH* és una matriu de similitud, per tant tenim que $q_{ii}=1$, $q_{ij}=q_{ji}$ i $0\leq q_{ij}\leq$. Llavors podem calcular la seva matriu de distàncies associada: 
+Com hem dit abans, *VH* és una matriu de similitud, per tant tenim que $q_{ii}=1$, $q_{ij}=q_{ji}$ i $0\leq q_{ij}\leq$.
+Llavors podem calcular la seva matriu de distàncies associada:
 
 ```{r matriz distancias vh}
 dVH <- 2*(1-VH) %>% sqrt()
-dVH %>% head()
+dVH %>% head(dVH[,1:10], n= 10)
 ```
 
 A partir d'aquesta matriu de distàncies, podem aplicar l'escalament multidimensional emprant només $2$ components principals, com ens indica l'enunciat:
@@ -84,7 +91,7 @@ A partir d'aquesta matriu de distàncies, podem aplicar l'escalament multidimens
 ```{r, warning = FALSE}
 #Aplicam l'escalament multidimensional
 mdsVH <- dVH %>% cmdscale(k = 2) %>% as_tibble()
-mdsVH %>% head()
+mdsVH %>% head(mdsVH[,1:5], n= 5)
 ```
 
 Ara farem la representació gràfica de les dades pintant els punts d'acord amb el phylum de cada animal:
@@ -101,13 +108,16 @@ ggplot(mdsVH, aes(x = Dim.1, y = Dim.2, color = phylum)) + geom_point(size = 2) 
   theme_minimal() 
 ```
 
-És clar que al gràfic hi predominen els punts associats als phylums $101$ i al $106$. Això és degut a que la major part dels individus amb els quals treballam tenen dits phylums, com es pot observar a la següent taula:
+És clar que al gràfic hi predominen els punts associats als phylums $101$ i al $106$.
+Això és degut a que la major part dels individus amb els quals treballam tenen dits phylums, com es pot observar a la següent taula:
 
 ```{r}
 table(phylum$phylum)
 ```
 
-A més, sabem que hi ha $370$ individus; per aquesta raó la matriu $VH\in M_{370\times370}$, llavors, realment hauría d'haver 370 punts representats. El que està passant és que moltes de les observacions es superposen a la mateixa possició i per tant només en veiem una. Anem a afegir una perturbació aleatòria a les observacions per dispersar-les al gràfic:
+A més, sabem que hi ha $370$ individus; per aquesta raó la matriu $VH\in M_{370\times370}$, llavors, realment hauría d'haver 370 punts representats.
+El que està passant és que moltes de les observacions es superposen a la mateixa possició i per tant només en veiem una.
+Anem a afegir una perturbació aleatòria a les observacions per dispersar-les al gràfic:
 
 ```{r}
 ggplot(mdsVH, aes(x = Dim.1, y = Dim.2, color = phylum)) + geom_point(size = 2) +  
@@ -117,13 +127,16 @@ ggplot(mdsVH, aes(x = Dim.1, y = Dim.2, color = phylum)) + geom_point(size = 2) 
 
 Ara podem veure que realment al primer gràfic trobem tots els individus representats.
 
-També podem distingir sobretot al primer agrupacions de punts en forma de sis columnes verticals, no obstant, realment hi ha $14$ nivells per al phylum, per tant, la matriu de similitud no manté correctament les agrupacions. Un altre argument que reforça aquesta idea és que tenim punts del mateix phylum que al gràfic es troben clarament dins agrupacions diferents; per exemple els que tenen phylum $106$ o $112$ veim que tenen punts a diferents columnes.
+També podem distingir sobretot al primer agrupacions de punts en forma de sis columnes verticals, no obstant, realment hi ha $14$ nivells per al phylum, per tant, la matriu de similitud no manté correctament les agrupacions.
+Un altre argument que reforça aquesta idea és que tenim punts del mateix phylum que al gràfic es troben clarament dins agrupacions diferents; per exemple els que tenen phylum $106$ o $112$ veim que tenen punts a diferents columnes.
 
 Idealment, voldríem que els punts associats a cada phylum s'agrupassin únicament entre ells, i que no hi hagés interseccions entre els diferents nivells.
 
 Per tant, amb la matriu *VH*, l'escalament multidimensional no proporciona una representació fidel de l'estructura original en dues dimensions, tot i que hem vist que amb dues coordenades principals és pot explicar la major part de la variabilitat.
 
-- **Mètode SP**
+-   **Mètode SP**
+
+En primer lloc, igual que al métode anterior, calculam la matriu de similitud del kernel Shortest-Path
 
 ```{r}
 #Aquesta és la matriu de similitud del kernel Shortest-Path
@@ -131,7 +144,7 @@ SP <- read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-202412
 head(SP[,1:10], n= 10)
 ```
 
-Comprovem si només dues coordenades principals basten per fer una bona aproximació:
+Seguidament, comprovem si només dues coordenades principals basten per fer una bona aproximació:
 
 ```{r}
 # ACP per a la matriu de similitud
@@ -141,46 +154,62 @@ fviz_eig(acpSP, addlabels = TRUE, ylim=c(0,90)) +
   theme_minimal()
 ```
 
-Podem veure que amb dues coordenades principals estaríem explicant aproximadament un $93.2%$ de la variabilitat. Per tant, en principi basten només dues. Anem ara a fer la representació.
+Podem veure que amb dues coordenades principals estaríem explicant aproximadament un $93.2%$ de la variabilitat.
+Per tant, en principi basten només dues.
+Anem ara a fer la representació.
 
-Al igual que abans, en primer lloc, calcularem la matriu de similituds obtinguda amb el mètode SP i mostrem les relacions entre els 15 primers grafs:
-
-A diferència de la matriu de similituds VH, sembla que aquí hi ha una millor distinció, per veurer si és cert, calculem la matriu de distàncies i mostrem les 5 primeres observacions:
+Tornant a la matriu de similituds, a diferència de la matriu de similituds VH, sembla que aquí hi ha una millor distinció, per veurer si és cert, calculem la matriu de distàncies i mostrem les 10 primeres observacions:
 
 ```{r}
 dSP = sqrt(2*(1-SP))
-head(dSP[,1:5], n= 5)
+head(dSP[,1:10], n= 10)
 ```
 
-Ara, aplicam el mètode de coordenades principals amb la matriu de distància anterior i especificant $k = 2$ per a les coordenades principals i mostram les primeres 5 observacions són:
+Seguint el mateix pricediment que al métode anterior, a partir d'aquesta matriu de distàncies anterior, aplicam l'escalament multidimensional emprant només $2$ components principals i mostram les 5 primeres observacións:
 
 ```{r, warning = FALSE}
-mdsSP <- cmdscale(dSP, k = 2) %>% 
-  as_tibble()
-
-mdsSP %>% 
-  slice_head(n = 5)
+#Aplicam l'escalament multidimensional
+mdsSP <- dSP %>% cmdscale(k = 2) %>% as_tibble()
+mdsSP %>% head(mdsSP[,1:5], n= 5)
 ```
 
 Finalment, mostrarem el gràfic de la matriu de similitud generada pel **mètode SP** diferenciant pel grup d'animals que pertanyen segons el seu phylum amb el mateix mètode anterior.
 
 ```{r}
 colnames(mdsSP) <- c("Dim.1","Dim.2")
+#Juntam els dos data frames per poder clasificar per colors
 mdsSP <- cbind(mdsSP,phylum)
+#Necessitam tenir el phylum com a factor per a que r no faci una escala numèrica
 mdsSP$phylum <- mdsSP$phylum %>% as.factor()
-ggscatter(mdsSP, x = "Dim.1", y = "Dim.2", color = "phylum", size = 1, title = "MDS SP")
+#Feim el diagrama
+ggplot(mdsSP, aes(x = Dim.1, y = Dim.2, color = phylum)) + geom_point(size = 2) +  
+  labs(title = "Representació del MDS - Métode SP", x = "Dimensió 1", y = "Dimensió 2", color = "Phylum") +
+  theme_minimal() 
+
 ```
-En aquest gràfic, si no ens fixem en la separació per phylum, podem observar 3 agrupacions, que aproximadament són: una en el rectangle $[-0.3,0]\estafis[-0.2,0.1]$; una altra en el rectangle $[-0.125,0.3]\estafis[0,0.4]$; i l'última en $[0.25,0.5]\estafis[-0.2,0.1]$. Aquesta agrupació mostra més dispersió que en el métode anterior, això fa que no es vegin clarament els grups, ja que, per exemple, el rectangle aproximadament $[-0.1,0.1] \estafis [0.2, 0.4]$ sembla ser un altre grup, però no es pot deduir directament, per això, farem les dues interpretacions:
 
-Considerant 3 grups: en aquest cas, tenim que a partir d'aquesta matriu de similituds, s'ha pogut diferenciar pràcticament el grup 101. En canvi, el grup 106 mostra una gran dispersió, comprenent valors en l'interval $[-0.05, 0.5]$ en la primera dimensió, fent que alguns pertanyin al segon grup, i altres en el tercer grup. Finalment, els altres grups estan junts en el grup 2, això pot ser per la falta d'observacions, ja que aquestes observacions poden ser valors atípics i per tant fan semblar que pertanyen a un grup que potser amb una altra mostra no semblaria cert.
+En aquest gràfic podem fer dues observacions:
 
-Considerant 4 grups: amb aquesta agrupació tenim les mateixes conclusions sobre els grups 101 i 106, l'única diferència és que els altres grups estan compresos en el nou grup, excepte alguns com el grup 107, 108, 111 i 113.
+1.  Si ens fixem en la separació per phylum, on veim clarament que hi predominen els punts associats als phylums $101$ i al $106$, al igual que el métode anterior, com em dit abans, és degut a que la major part dels individus amb els quals treballam tenen dits phylums, recordem que ho em vist a una taula anteriorment.
+2.  Si no ens fixem en la separació del phylums, on observem 3 agrupacións que estan formades per, mirant l'eix de la dimensió 1, l'interval $[-0.3,0]$, l'inerval \$\[-0.125, 0.3\]\$ i l'interval \$\[0.25, 0.5\]\$.
 
-Finalment, es torna a observar una tendència dels vertebrats (roses) cap a l'esquerra i dels artròpodes (blaus) cap a la dreta.
+Per poder interpretar millor el grafic , com que tenim moltes observacions i pareix que es superposem, anem a afegir una perturbació aleatòria a les observacions per dispersar-les al gràfic i així traurer millors conclusións:
 
-- **Métode PM:**
+```{r}
+ggplot(mdsSP, aes(x = Dim.1, y = Dim.2, color = phylum)) + geom_point(size = 2) +  
+  labs(title = "Representació del MDS", x = "Dimensió 1", y = "Dimensió 2", color = "Phylum") +
+  theme_minimal() + geom_jitter(width = 0.02, height = 0.02)
+```
 
-```{r matriz similaridades pm}
+A partir d'aquest gràfic podem distingur millor les 3 observacions, on vegem clarament que els phylums del grup 101, es troben totes concentrades a la cantonada inferior esquerra, indicant que les observacions d'aquest grup són molt similars entre si i distintes a altres grups.
+Els phylums del grup 106 els trobem agrupats a la cantonada dreta, formant també un grup dens i separat , encara hi ha un poc de disperció cap al centre, ontrobem altres categories, els grups 107, 108, 111 i 113, que estan més disperses en la part superior del gràfic, la qual cosa ens suggeix que tenen una major variabilitat interna.
+
+Com a conclusió final, diria que el MDS ha aconseguit representar l'estructura de les dades originals en dues dimensions.
+A més, les agrupacions indiquen similituds entre categories de \*Phylum en funció de les característiques originals, i les separacions entre grups reflecteixen diferències significatives, mentre que les agrupacions més denses suggereixen major cohesió interna.
+
+-   **Métode PM:**
+
+```{r}
 #Aquesta és la matriu de similitud del kernel Pyramid Match
 PM <- read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixPM.txt")
 PM %>% head()
@@ -196,7 +225,9 @@ fviz_eig(acpPM, addlabels = TRUE, ylim=c(0,90)) +
   theme_minimal()
 ```
 
-Podem veure que amb dues coordenades principals estaríem explicant aproximadament un $94.1%$ de la variabilitat. Per tant, en principi basten només dues. Anem ara a fer la representació.
+Podem veure que amb dues coordenades principals estaríem explicant aproximadament un $94.1%$ de la variabilitat.
+Per tant, en principi basten només dues.
+Anem ara a fer la representació.
 
 Emprant el mateix procediment que abans, calculem la matriu de distàncies:
 
@@ -207,7 +238,7 @@ dPM %>% head()
 
 Apliquem l'escalament multidimensional amb dues coordenades principals:
 
-```{r mds pm, warning = FALSE}
+```{r, warning = FALSE}
 mdsPM <- cmdscale(dPM, k = 2) %>% as_tibble()
 mdsPM %>% head()
 ```
@@ -223,15 +254,14 @@ ggplot(mdsPM, aes(x = Dim.1, y = Dim.2, color = phylum)) + geom_point(size = 2) 
   theme_minimal()
 ```
 
-A aquest cas seguim tenint el mateix problema; no es pot distingir la separació de tots els nivells. Hi ha un grup clarament diferenciat que és aquell corresponent al phylum $101$, i l'altre grup que correspon als punts amb la primera coordenada positiva. En el cas del segon grup, no podem fer una distinció bona. És cer que la majoria d'individus amb phylum $106$ s'agrupen a la part superior, i podríem considerar-los com un grup inclòs dins el quadrat $[0,0.3]\times[-0.05,0.2]$. Tot i així, la distinció amb la resta de punts no és ben clara.
+A aquest cas seguim tenint el mateix problema; no es pot distingir la separació de tots els nivells.
+Hi ha un grup clarament diferenciat que és aquell corresponent al phylum $101$, i l'altre grup que correspon als punts amb la primera coordenada positiva.
+En el cas del segon grup, no podem fer una distinció bona.
+És cer que la majoria d'individus amb phylum $106$ s'agrupen a la part superior, i podríem considerar-los com un grup inclòs dins el quadrat $[0,0.3]\times[-0.05,0.2]$.
+Tot i així, la distinció amb la resta de punts no és ben clara.
 
 D'aquest cas hi podem extreure una conclusió interessant, ja que notem que els individus que s'han agrupat han estat els que pertanyen als phylums amb més observacions; i la resta d'individus que estan manco segregats tenen un nombre d'observacions als seus phylums molt baix.
 
 Llavors, torna a passar que es preserva bé la variabilitat, però la projecció bidimensional no és una bona representació.
 
 Finalment, podem concloure que en els tres casos, amb només dues coordenades principals, sembla que no es pot representar tota la informació correctament, tot i que es preservi la variabilitat.
-
-
-
-
-
