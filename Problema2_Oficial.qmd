@@ -1,0 +1,323 @@
+---
+title: "Problema 2 - Sergio Rivadulla, Jaume Maimó i Àngela Martí "
+subtitle: "20582- Anàlisis de Dades pel GMAT"
+format:
+  html:
+    theme: lumen
+    toc: true
+    toc-depth: 3
+    embed-resources: true
+editor: 
+  markdown: 
+    wrap: sentence
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r librerias, warning = FALSE, message = FALSE}
+library(MVA)
+library(tidyverse)
+library(magrittr)
+library(dplyr)
+library(ggpubr)
+```
+
+# Problema 2
+
+**El metabolisme es caracteritza per reaccions químiques vinculades entre si, creant una complexa estructura de xarxa. Una representació simplificada del metabolisme, que anomenem xarxa metabòlica abstracta, és un graf en què les vies metabòliques són nodes i hi ha una aresta entre dos nodes si les corresponents vies comparteixen un o més compostos.**
+
+**Per explorar els potencials i els límits d'una representació tan bàsica, hem fet servir tres tipus de kernels (distàncies entre grafs):**
+
+-   **VH (Vertex histogram): només té en compte si les etiquetes dels nodes dels grafs que es comparen són iguals o no.**
+
+-   **SP (Shortest-Path): compara els grafs en funció dels camins més curts. Intuïtivament, això significa mesurar com és de fàcil o difícil connectar, a través de compostos compartits, parelles de camins en els dos grafs.**
+
+-   **PM (Pyramid Match): mesura la similitud de les característiques topològiques (per exemple, la connectivitat) dels nodes amb la mateixa etiqueta als dos grafs comparats.**
+
+**La pràctica consisteix a representar gràficament (amb només 2 coordenades principals) les matrius de similitud generades per cada nucli pintant els punts d'acord amb el grup d'animals d'acord amb el seu phylum.**
+
+# Resolem
+
+
+Al llarg del document estudiarem i representarem les distàncies de les representacions en grafs dels diferents metabolismes que presenten els animals observats. En particular, el que farem serà estudiar les distàncies obtingudes de les similituds entre VH, SP, PM, i les representarem a partir de dues coordenades principals.Per finalitzar, compararem l'agrapació obtinguda i l'agrupació que s¡obté amb el phylum, coloretjant els puns en aquesta darrera agrupació.
+
+Començam llegint el fitchet adjuntat a aula digital i definim la variable phylum.
+
+```{r}
+phylum <- read.csv("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/fileListANIMAL_phylum.txt")
+```
+
+En primer lloc, començarem amb la matriu de distàncies obtinguda a partir del métode VH, i mostrarem la matriu de partida, la qual és una ,atriu de similituds entre els primers 15 grafs. 
+
+```{r}
+mat_vh = read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixVH.txt")
+head(mat_vh[,1:15], n= 15)
+```
+
+Ara, per veurer si realment seria una bona aproximació si ho reduim a dimensió 2, calculant primer els vaps, on vegem que explicariem aproximadament un 96%. 
+
+```{r, echo=FALSE, include=FALSE}
+# ACP per a cada matriu
+acp_vh <- prcomp(mat_vh, center = TRUE, scale. = TRUE)
+# Calculem els vaps
+vaps_vh <- acp_vh %>% get_eigenvalue()
+
+```
+
+Ho veim de forma implicita en el següent gràfic:
+
+```{r}
+fviz_eig(acp_vh, addlabels = TRUE, ylim=c(0,75)) +
+  ggtitle("De les dades de VH") +
+  theme_minimal()
+
+
+```
+
+D'acord amb la teoria, la matriu de distàncies associades serà la que obtindrem en fer $\sqrt{2(1-q_{ij})}$ sent $q_{ij}$ els elements de la matriu de partida:
+
+```{r matriz distancias vh}
+dist_vh = sqrt(2*(1-mat_vh))
+head(dist_vh[,1:15], n= 15)
+```
+
+Apliquem el mètode de coordenades principals amb la funció de R `*cmdscale`, usant la matriu de distàncies anterior i especificant $k = 2$ (dos components principals). Les primeres 15 observacions són:
+
+```{r, warning = FALSE}
+vh_mds <- cmdscale(dist_vh, k = 2) %>% 
+  as_tibble()
+
+vh_mds %>% 
+  slice_head(n = 15)
+```
+
+Vam mostrar el gràfic de la matriu de similitud generada pel mètode VH. Per a acolorir els punts d'acord amb el grup d'animals al qual pertanyen segons el seu phylum, unirem els dos tibble `vh_mds` i `phylum` mitjançant la funció `bind_cols()`.
+
+```{r grafico mds vh, fig.height=4, fig.width=6}
+colnames(vh_mds) <- c("Dim.1", "Dim.2")
+
+vh_mds_phylum <- bind_cols(vh_mds, phylum)
+
+vh_mds_phylum$V2 <- as.ordered(vh_mds_phylum$V2) # Para poder colorear los puntos
+
+ggscatter(vh_mds_phylum, x = "Dim.1", y = "Dim.2", size = 1, color = "V2", palette = c("deeppink", "orange", "yellow", "green", "cyan", "blue", "purple", "violetred", "tan4", "orangered", "olivedrab", "black", "cornsilk3", "red4"), title = "MDS Vertex Histogram")
+```
+
+
+Veiem que la mayoria de punts són o blaus o roses, que corresponen als grups 101 i 106 respectivament, això es deu al fet que tenim molts més individus amb aquests nivells de phylum, vegem exactament quants individus hi ha per a cada nivell:
+
+```{r}
+summary(vh_mds_phylum$V2)
+```
+
+A simple vista sembla que tenim 5 grups, que corresponen a les bandes verticals i considerant aquell "punt" agrupat amb la banda vertical que té coordenada aproximadament $-0.1$ en la primera dimensió. No obstant això, a causa de la simplicitat de la matriu de similituds VH, els punts se superposen i això provoca que no s'obtingui realment la informació correcta, ja que si veiem quantes observacions hi ha en aquest "punt", tenim 7 observacions:
+
+```{r "punto"}
+vh_punto1 = vh_mds[between(vh_mds$Dim.1, -0.6, 0) & between(vh_mds$Dim.2, 0, 0.05),]
+
+vh_punto1 %>% 
+  arrange(Dim.1) %>% 
+  slice_tail(n = 7)
+
+```
+
+
+Llavors aquest "punt" efectivament, és un grup distingit. En canvi, si estudiem aquest punt distingit amb valor en la segona coordenada aproximadament de $-0.05$, tenim que només hi ha una observació i per tant sembla que pertany al grup format per la banda vertical que es troba damunt d'aquest punt.
+
+Per tant, podem diferenciar 6 grups distints, que corresponen a les bandes verticals i al "punt" que hem comentat. A partir del phylum, veiem que realment els grups que hi ha són 14, llavors a partir d'aquestes similituds no estem obtenint correctament l'agrupació adequada. A més, si ens fixem en el grup 106, corresponent al grup dels artròpodes, veiem que pertanyen en fins a 4 grups diferents, amb això podem deduir que en efecte, estem perdent informació amb la matriu de similituds VH. D'altra banda, el grup 101, corresponent al grup dels vertebrats estan separats en dos grups. En conclusió, no obtenim una bona agrupació.
+
+Ara repetirem el procés amb les matrius de similituds obtingudes amb els dos mètodes restants:
+
+Matriu de similituds obtinguda amb el mètode SP: vam mostrar les relacions entre els 15 primers grafs:
+
+```{r matriz similaridades sp}
+mat_sp = read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixSP.txt")
+head(mat_sp[,1:15], n= 15)
+```
+
+
+A diferència de la matriu de similituds VH, sembla que aquí hi ha una millor distinció, vegem si és cert, calculem la matriu de distàncies:
+
+```{r matriz distancias sp}
+dist_sp = sqrt(2*(1-mat_sp))
+head(dist_sp[,1:15], n= 15)
+```
+
+Tornem a aplicar el mètode de coordenades principals amb la funció de R `cmdscale`, ara amb la matriu de distància anterior i especificant $k = 2$ per a les coordenades principals. Les primeres 15 observacions són:
+
+```{r mds sp, warning = FALSE}
+sp_mds <- cmdscale(dist_sp, k = 2) %>% 
+  as_tibble()
+
+sp_mds %>% 
+  slice_head(n = 15)
+```
+
+
+I finalment vam mostrar el gràfic de la matriu de similitud generada pel mètode SP diferenciant una altra vegada pel grup d'animals que pertanyen segons el seu phylum amb el mateix mètode anterior.
+
+```{r grafico mds sp, fig.height=4, fig.width=6}
+colnames(sp_mds) <- c("Dim.1", "Dim.2")
+
+sp_mds_phylum <- bind_cols(sp_mds, phylum)
+
+sp_mds_phylum$V2 <- as.ordered(sp_mds_phylum$V2) # Para poder colorear los puntos
+
+ggscatter(sp_mds_phylum, x = "Dim.1", y = "Dim.2", size = 1, color = "V2", palette = c("deeppink", "orange", "yellow", "green", "cyan", "blue", "purple", "violetred", "tan4", "orangered", "olivedrab", "black", "cornsilk3", "red4"), title = "MDS Shortest-Path")
+
+```
+En aquest gràfic, si no ens fixem en la separació per phylum, podem observar 3 agrupacions, que aproximadament són: una en el rectangle $[-0.3,0]\estafis[-0.2,0.1]$; una altra en el rectangle $[-0.125,0.3]\estafis[0,0.4]$; i l'última en $[0.25,0.5]\estafis[-0.2,0.1]$. Aquesta agrupació mostra més dispersió que en l'anterior, això fa que no es vegin clarament els grups, ja que, per exemple, el rectangle aproximadament $[-0.1,0.1] \estafis [0.2, 0.4]$ sembla ser un altre grup, però no es pot deduir directament, per això, farem les dues interpretacions:
+
+Considerant 3 grups: en aquest cas, tenim que a partir d'aquesta matriu de similituds, s'ha pogut diferenciar pràcticament el grup 101. En canvi, el grup 106 mostra una gran dispersió, comprenent valors en l'interval $[-0.05, 0.5]$ en la primera dimensió, fent que alguns pertanyin al segon grup, i altres en el tercer grup. Finalment, els altres grups estan junts en el grup 2, això pot ser per la falta d'observacions, ja que aquestes observacions poden ser valors atípics i per tant fan semblar que pertanyen a un grup que potser amb una altra mostra no semblaria cert.
+
+Considerant 4 grups: amb aquesta agrupació tenim les mateixes conclusions sobre els grups 101 i 106, l'única diferència és que els altres grups estan compresos en el nou grup, excepte alguns com el grup 107, 108, 111 i 113.
+
+Finalment, es torna a observar una tendència dels vertebrats (roses) cap a l'esquerra i dels artròpodes (blaus) cap a la dreta.
+
+Finalment la matriu de similituds obtinguda amb el mètode PM, vam mostrar les relacions entre els 15 primers grafs:
+
+```{r matriz similaridades pm}
+mat_pm = read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixPM.txt")
+head(mat_pm[,1:15], n= 15)
+```
+
+Calculem la matriu de distàncies:
+
+```{r matriz distancias pm}
+dist_pm = sqrt(2*(1-mat_pm))
+head(dist_pm[,1:15], n= 15)
+```
+
+Apliquem el mètode de coordenades principals amb la funció de R `*cmdscale`, especificant $k = 2$. Les primeres 15 observacions són:
+
+```{r mds pm, warning = FALSE}
+pm_mds <- cmdscale(dist_pm, k = 2) %>% 
+  as_tibble()
+
+pm_mds %>% 
+  slice_head(n = 15)
+```
+
+I el seu gràfic:
+
+```{r grafico mds pm, fig.height=4, fig.width=6}
+colnames(pm_mds) <- c("Dim.1", "Dim.2")
+
+pm_mds_phylum <- bind_cols(pm_mds, phylum)
+
+pm_mds_phylum$V2 <- as.ordered(pm_mds_phylum$V2) # Para poder colorar los puntos
+
+ggscatter(pm_mds_phylum, x = "Dim.1", y = "Dim.2", size = 1, color = "V2",
+          palette = c("deeppink", "orange", "yellow", "green", "cyan", "blue", "purple", "violetred", "tan4", "orangered", "olivedrab", "black", "cornsilk3", "red4"), title = "MDS Pyramid Match")
+```
+
+Igual que amb la matriu de similituds anterior, les agrupacions no queden ben diferenciades, ja que o bé tenim els 2 grups segons si la primera coordenada és negativa o positiva, o bé els 3 grups que aproximadament són: aquells amb primera coordenada negativa; aquells amb primera coordenada positiva i amb segona coordenada en $[-0.3, -0.1]$; aquells amb primera coordenada positiva i amb segona coordenada en $[-0.1, 0.2]$. Estudiem els dos casos:
+
+Considerant 2 grups: podem veure que el grup amb phylum 101 finalment ha estat perfectament agrupat i distingit. D'altra banda les observacions que prtenecen al grup amb phylum 106 estan en el mateix grup, no obstant això, també contenen altres grups segons el phylum. Finalment, els altres grups, amb observacions massa baixes, s'agrupen en el grup 2.
+
+Considerant 3 grups: les diferències respecte al cas anterior és que ara també el grup 106 està separat i agrupat correctament, excepte una certa dispersións. A més, els altres grups que tenen poques observacions pertanyen al mateix grup, però sense poder treure més conclusions.
+
+En conclusió, respecte a la totalitat del treball, en general sembla que considerant dues coordenades principals, estem perdent massa informació per a obtenir els resultats correctes segons el *phylum, no obstant això, si calculem els coeficients de precisió a partir dels valors propis de les matrius de similitud:
+
+VH:
+
+```{r}
+
+valors_vh = eigen(mat_vh)$values
+
+m_12_vh = ( sum(abs(valors_vh[1:2])) / sum(abs(valors_vh)) ) *100
+m_12_vh
+
+```
+
+
+```{r}
+
+m_22_vh = ( sum(valors_vh[1:2]^2)/ sum(valors_vh^2) )*100
+m_22_vh
+
+```
+
+
+SP:
+
+```{r}
+
+valors_sp = eigen(mat_sp)$values
+
+m_12_sp = ( sum(abs(valors_sp[1:2])) / sum(abs(valors_sp)) ) *100
+m_12_sp
+```
+
+
+```{r}
+
+m_22_sp = ( sum(valors_sp[1:2]^2)/ sum(valors_sp^2) )*100
+m_22_sp
+
+```
+
+
+PM:
+
+```{r}
+
+valors_pm = eigen(mat_pm)$values
+
+m_12_pm = ( sum(abs(valors_pm[1:2])) / sum(abs(valors_pm)) ) *100
+m_12_pm 
+```
+
+
+```{r PM precision m_22}
+
+m_22_pm = ( sum(valors_pm[1:2]^2)/ sum(valors_pm^2) )*100
+m_22_pm
+```
+
+
+Tenim que la precisió és molt alta, i, si comparem, tenim que amb VH obtenim una millor representació (segons aquest criteri), després amb PM i finalment amb SP. A partir de l'observat, sembla ser que la variabilitat si que s'ha preservat, però en considerar només 2 dimensions, veiem les dades des d'un punt de vista equivocat, és a dir, que les projeccions 2-dimensionals no són adequades fins i tot tenint una bona precisió segons el criteri.
+
+AL PRIMER HO HE POSAT ENMIG NO SE AON PREFERI POSAR-HO A MI M'ÉS IGUAL
+Per ùltim, una altra cosa que podriem fer és reduïm la dimensionalitat de les matrius utilitzant ACP(jo aquí posaría algo de teoria, es a dir la definicio o fórmula):
+
+```{r}
+# ACP per a cada matriu
+pca_vh <- prcomp(VH, center = TRUE, scale. = TRUE)
+pca_sp <- prcomp(SP, center = TRUE, scale. = TRUE)
+pca_pm <- prcomp(PM, center = TRUE, scale. = TRUE)
+```
+
+
+Vegem si realment seria una bona aproximació si ho reduim a dimensió 2:
+
+```{r}
+vaps_vh <- pca_vh %>% get_eigenvalue()
+vaps_sp <- pca_sp %>% get_eigenvalue()
+vaps_pm <- pca_pm %>% get_eigenvalue()
+
+#vaps_vh
+#vaps_sp
+#vaps_pm
+
+```
+
+Vegem que explicariem aproximadament un 96%, un 93% i un 94% respectivament de solament amb les dues primeres compoments principals. Per tant, és raonable fer l'anàlisi solament amb aquestes components.
+Ho podem veure explícit en el següent gràfic:
+
+```{r}
+fviz_eig(pca_vh, addlabels = TRUE, ylim=c(0,75)) +
+  ggtitle("De les dades de VH") +
+  theme_minimal()
+
+fviz_eig(pca_sp, addlabels = TRUE, ylim=c(0,75))+
+  ggtitle("De les dades de SP") +
+  theme_minimal()
+fviz_eig(pca_pm, addlabels = TRUE, ylim=c(0,75))+
+  ggtitle("De les dades de PM") +
+  theme_minimal()
+
+```
+
