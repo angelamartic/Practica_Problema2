@@ -52,6 +52,7 @@ La primera matriu que representarem serà la que ens dona el kernel *VH*
 
 ```{r}
 VH <- read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixVH.txt")
+VH
 ```
 Com hem dit abans, *VH* és una matriu de similitud, per tant tenim que $q_{ii}=1$, $q_{ij}=q_{ji}$ i $0\leq q_{ij}\leq$. Per tant podem calcular la matriu de distàncies associada: 
 
@@ -63,6 +64,7 @@ A partir d'aquesta matriu de distàncies, podem aplicar l'escalament multidimens
 
 ```{r, warning = FALSE}
 mds_VH <- dVH %>% cmdscale(k = 2) %>% as_tibble()
+#mds_VH
 ```
 
 Ara farem la representació gràfica de les dades pintant els punts d'acord amb el grup d'animals d'acord amb el seu phylum:
@@ -120,7 +122,7 @@ dist_vh = sqrt(2*(1-mds_vh))
 head(dist_vh[,1:15], n= 15)
 ```
 
-Apliquem el mètode de coordenades principals amb la funció de R `*cmdscale`, usant la matriu de distàncies anterior i especificant $k = 2$ (dos components principals). Les primeres 15 observacions són:
+Apliquem el mètode de coordenades principals amb la funció de R `cmdscale`, usant la matriu de distàncies anterior i especificant $k = 2$ (dos components principals). Les primeres 15 observacions són:
 
 ```{r, warning = FALSE}
 vh_mds <- cmdscale(dist_vh, k = 2) %>% 
@@ -167,27 +169,30 @@ Per tant, podem diferenciar 6 grups distints, que corresponen a les bandes verti
 
 Ara repetirem el procés amb les matrius de similituds obtingudes amb els dos mètodes restants:
 
-Matriu de similituds obtinguda amb el mètode SP: vam mostrar les relacions entre els 15 primers grafs:
+- **Métode SP**
+
+Al igual que abans, en primer lloc, calcularem la matriu de similituds obtinguda amb el mètode SP i mostrem les relacions entre els 15 primers grafs:
+
 ```{r, include=FALSE}
 phylum1 <- read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/fileListANIMAL_phylum.txt")
 ```
 
-```{r matriz similaridades sp}
+```{r, include=FALSE}
 mat_sp = read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixSP.txt")
 head(mat_sp[,1:15], n= 15)
 ```
 
 
-A diferència de la matriu de similituds VH, sembla que aquí hi ha una millor distinció, vegem si és cert, calculem la matriu de distàncies:
+A diferència de la matriu de similituds VH, sembla que aquí hi ha una millor distinció, per veurer si és cert, calculem la matriu de distàncies:
 
-```{r}
+```{r, include=FALSE}
 dist_sp = sqrt(2*(1-mat_sp))
 head(dist_sp[,1:15], n= 15)
 ```
 
-Tornem a aplicar el mètode de coordenades principals amb la funció de R `cmdscale`, ara amb la matriu de distància anterior i especificant $k = 2$ per a les coordenades principals. Les primeres 15 observacions són:
+Ara, aplicam el mètode de coordenades principals amb la matriu de distància anterior i especificant $k = 2$ per a les coordenades principals i mostram les primeres 5 observacions són:
 
-```{r mds sp, warning = FALSE}
+```{r, warning = FALSE, include=FALSE}
 sp_mds <- cmdscale(dist_sp, k = 2) %>% 
   as_tibble()
 
@@ -196,7 +201,7 @@ sp_mds %>%
 ```
 
 
-I finalment vam mostrar el gràfic de la matriu de similitud generada pel mètode SP diferenciant una altra vegada pel grup d'animals que pertanyen segons el seu phylum amb el mateix mètode anterior.
+Finalment, mostrarem el gràfic de la matriu de similitud generada pel **mètode SP** diferenciant pel grup d'animals que pertanyen segons el seu phylum amb el mateix mètode anterior.
 
 ```{r grafico mds sp, fig.height=4, fig.width=6}
 colnames(sp_mds) <- c("Dim.1", "Dim.2")
@@ -209,11 +214,6 @@ ggscatter(sp_mds_phylum, x = "Dim.1", y = "Dim.2", size = 1, color = "V2", palet
 
 ```
 
-```{r}
-ggplot(sp_mds, aes(x = Dim.1, y = Dim.2, color = phylum1)) + geom_point(size = 2) +  
-  labs(title = "Representació del MDS", x = "Dimensió 1", y = "Dimensió 2", color = "Phylum") +
-  theme_minimal()
-```
 
 En aquest gràfic, si no ens fixem en la separació per phylum, podem observar 3 agrupacions, que aproximadament són: una en el rectangle $[-0.3,0]\estafis[-0.2,0.1]$; una altra en el rectangle $[-0.125,0.3]\estafis[0,0.4]$; i l'última en $[0.25,0.5]\estafis[-0.2,0.1]$. Aquesta agrupació mostra més dispersió que en l'anterior, això fa que no es vegin clarament els grups, ja que, per exemple, el rectangle aproximadament $[-0.1,0.1] \estafis [0.2, 0.4]$ sembla ser un altre grup, però no es pot deduir directament, per això, farem les dues interpretacions:
 
