@@ -173,10 +173,6 @@ Ara repetirem el procés amb les matrius de similituds obtingudes amb els dos m�
 
 Al igual que abans, en primer lloc, calcularem la matriu de similituds obtinguda amb el mètode SP i mostrem les relacions entre els 15 primers grafs:
 
-```{r, include=FALSE}
-phylum1 <- read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/fileListANIMAL_phylum.txt")
-```
-
 ```{r}
 SP = read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixSP.txt")
 head(SP[,1:15], n= 15)
@@ -202,17 +198,6 @@ SP_mds %>%
 
 
 Finalment, mostrarem el gràfic de la matriu de similitud generada pel **mètode SP** diferenciant pel grup d'animals que pertanyen segons el seu phylum amb el mateix mètode anterior.
-
-```{r grafico mds sp, fig.height=4, fig.width=6}
-colnames(SP_mds) <- c("Dim.1", "Dim.2")
-
-SP_mds_phylum <- bind_cols(sp_mds, phylum1)
-
-SP_mds_phylum$V2 <- as.ordered(SP_mds_phylum$V2) # Para poder colorear los puntos
-
-ggscatter(sp_mds_phylum, x = "Dim.1", y = "Dim.2", size = 1, color = "V2", palette = c("deeppink", "orange", "yellow", "green", "cyan", "blue", "purple", "violetred", "tan4", "orangered", "olivedrab", "black", "cornsilk3", "red4"), title = "MDS SP")
-
-```
 
 ```{r}
 colnames(SP_mds) <- c("Dim.1","Dim.2")
