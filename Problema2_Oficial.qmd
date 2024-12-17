@@ -44,56 +44,77 @@ L'enunciat ens presenta tres matrius de similituds entre grafs. El que farem ser
 
 
 ```{r}
-phylum <- read.csv("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/fileListANIMAL_phylum.txt", sep = " ", header = F)
+#Llegim la taula on es troben les dades del phylum de cada animal
+phylum <- read.csv("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/fileListANIMAL_phylum.txt", 
+sep = " ", header = F)
+#Posam nom a cada variable
 colnames(phylum) <- c("Animal", "phylum")
+phylum %>% glimpse()
 ```
+
+**Mètode VH**
 
 La primera matriu que representarem serà la que ens dona el kernel *VH* 
 
 ```{r}
+#Aquesta és la matriu de similitud del kernel Vertex histogram
 VH <- read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixVH.txt")
-VH
+VH %>% head()
 ```
-Com hem dit abans, *VH* és una matriu de similitud, per tant tenim que $q_{ii}=1$, $q_{ij}=q_{ji}$ i $0\leq q_{ij}\leq$. Per tant podem calcular la matriu de distàncies associada: 
+
+Com hem dit abans, *VH* és una matriu de similitud, per tant tenim que $q_{ii}=1$, $q_{ij}=q_{ji}$ i $0\leq q_{ij}\leq$. Llavors podem calcular la seva matriu de distàncies associada: 
 
 ```{r matriz distancias vh}
 dVH <- 2*(1-VH) %>% sqrt()
+dVH %>% head()
 ```
 
-A partir d'aquesta matriu de distàncies, podem aplicar l'escalament multidimensional emprant només $2$ components principals.
+A partir d'aquesta matriu de distàncies, podem aplicar l'escalament multidimensional emprant només $2$ components principals, com ens indica l'enunciat:
 
 ```{r, warning = FALSE}
-mds_VH <- dVH %>% cmdscale(k = 2) %>% as_tibble()
-#mds_VH
+#Aplicam l'escalament multidimensional
+mdsVH <- dVH %>% cmdscale(k = 2) %>% as_tibble()
+mdsVH %>% head()
 ```
 
-Ara farem la representació gràfica de les dades pintant els punts d'acord amb el grup d'animals d'acord amb el seu phylum:
+Ara farem la representació gràfica de les dades pintant els punts d'acord amb el phylum de cada animal:
 
 ```{r}
-colnames(mds_VH) <- c("Dim.1","Dim.2")
-mds_VH <- cbind(mds_VH,phylum)
-mds_VH$phylum <- mds_VH$phylum %>% as.factor()
-ggscatter(mds_VH, x = "Dim.1", y = "Dim.2", color = "phylum", size = 1)
-```
-
-```{r}
-ggplot(mds_VH, aes(x = Dim.1, y = Dim.2, color = phylum)) + geom_point(size = 2) +  
+colnames(mdsVH) <- c("Dim.1","Dim.2")
+#Juntam els dos data frames per poder clasificar per colors
+mdsVH <- cbind(mdsVH,phylum)
+#Necessitam tenir el phylum com a factor per a que r no faci una escala numèrica
+mdsVH$phylum <- mdsVH$phylum %>% as.factor()
+#Feim el diagrama
+ggplot(mdsVH, aes(x = Dim.1, y = Dim.2, color = phylum)) + geom_point(size = 2) +  
   labs(title = "Representació del MDS", x = "Dimensió 1", y = "Dimensió 2", color = "Phylum") +
-  theme_minimal()
+  theme_minimal() 
 ```
 
-Predominan los puntos asociados al phylum $101$ y al $106$  ya que son el tipo de phylum predominante en los animales que estamos analizando.
+És clar que al gràfic hi predominen els punts associats als phylums $101$ i al $106$. Això és degut a que la major part dels individus amb els quals treballam tenen dits phylums, com es pot observar a la següent taula:
 
 ```{r}
 table(phylum$phylum)
-
 ```
 
-Notem que realment hauría d'haver 370 punts representats, el que passa és que moltes de les observacions es superposen a la mateixa possició i per tant només en veiem una.
+A més, sabem que hi ha $370$ individus; per aquesta raó la matriu $VH\in M_{370\times370}$, llavors, realment hauría d'haver 370 punts representats. El que està passant és que moltes de les observacions es superposen a la mateixa possició i per tant només en veiem una. Anem a afegir una perturbació aleatòria a les observacions per dispersar-les al gràfic:
 
-També podem distingir al gràfic sis columnes verticals on s'agrupen els punts (tot i que realment una de les columnes és només un punt), no obstant, hi ha $14$ nivells per al phylum, per tant, la matriu de similitud no manté correctament les agrupacions. Un altre argument que reforça aquesta idea és que tenim punts del mateix phylum que al gràfic es troben clarament dins agrupacions diferents; per exemple els que tenen phylum $106$ o $112$ veim que tenen punts a diferents columnes.
+```{r}
+ggplot(mdsVH, aes(x = Dim.1, y = Dim.2, color = phylum)) + geom_point(size = 2) +  
+  labs(title = "Representació del MDS", x = "Dimensió 1", y = "Dimensió 2", color = "Phylum") +
+  theme_minimal() + geom_jitter(width = 0.02, height = 0.02)
+```
 
-Per tant, amb la matriu proporcionada no podem obtenir una agrupació bona.
+Ara podem veure que realment al primer gràfic trobem tots els individus representats.
+
+També podem distingir sobretot al primer agrupacions de punts en forma de sis columnes verticals, no obstant, realment hi ha $14$ nivells per al phylum, per tant, la matriu de similitud no manté correctament les agrupacions. Un altre argument que reforça aquesta idea és que tenim punts del mateix phylum que al gràfic es troben clarament dins agrupacions diferents; per exemple els que tenen phylum $106$ o $112$ veim que tenen punts a diferents columnes.
+
+Idealment, voldríem que els punts associats a cada phylum s'agrupassin únicament entre ells, i que no hi hagés interseccions entre els diferents nivells.
+
+Per tant, amb la matriu *VH*, l'escalament multidimensional no proporciona una representació fidel de l'estructura original en dues dimensions.
+
+
+**Part d'en Jaume** Jo crec que no fa falta afegir-la
 
 Ara, per veurer si realment seria una bona aproximació si ho reduim a dimensió 2, calculant primer els vaps, on vegem que explicariem aproximadament un 96%. 
 
@@ -111,73 +132,16 @@ Ho veim de forma implicita en el següent gràfic:
 fviz_eig(acp_vh, addlabels = TRUE, ylim=c(0,75)) +
   ggtitle("De les dades de VH") +
   theme_minimal()
-
-
 ```
 
-D'acord amb la teoria, la matriu de distàncies associades serà la que obtindrem en fer $\sqrt{2(1-q_{ij})}$ sent $q_{ij}$ els elements de la matriu de partida:
-
-```{r matriz distancias vh}
-dist_vh = sqrt(2*(1-mds_vh))
-head(dist_vh[,1:15], n= 15)
-```
-
-Apliquem el mètode de coordenades principals amb la funció de R `cmdscale`, usant la matriu de distàncies anterior i especificant $k = 2$ (dos components principals). Les primeres 15 observacions són:
-
-```{r, warning = FALSE}
-vh_mds <- cmdscale(dist_vh, k = 2) %>% 
-  as_tibble()
-
-vh_mds %>% 
-  slice_head(n = 15)
-```
-
-Vam mostrar el gràfic de la matriu de similitud generada pel mètode VH. Per a acolorir els punts d'acord amb el grup d'animals al qual pertanyen segons el seu phylum, unirem els dos tibble `vh_mds` i `phylum` mitjançant la funció `bind_cols()`.
-
-```{r grafico mds vh, fig.height=4, fig.width=6}
-colnames(vh_mds) <- c("Dim.1", "Dim.2")
-
-vh_mds_phylum <- bind_cols(vh_mds, phylum)
-
-vh_mds_phylum$V2 <- as.ordered(vh_mds_phylum$V2) # Para poder colorear los puntos
-
-ggscatter(vh_mds_phylum, x = "Dim.1", y = "Dim.2", size = 1, color = "V2", palette = c("deeppink", "orange", "yellow", "green", "cyan", "blue", "purple", "violetred", "tan4", "orangered", "olivedrab", "black", "cornsilk3", "red4"), title = "MDS Vertex Histogram")
-```
-
-
-Veiem que la mayoria de punts són o blaus o roses, que corresponen als grups 101 i 106 respectivament, això es deu al fet que tenim molts més individus amb aquests nivells de phylum, vegem exactament quants individus hi ha per a cada nivell:
-
-```{r}
-summary(vh_mds_phylum$V2)
-```
-
-A simple vista sembla que tenim 5 grups, que corresponen a les bandes verticals i considerant aquell "punt" agrupat amb la banda vertical que té coordenada aproximadament $-0.1$ en la primera dimensió. No obstant això, a causa de la simplicitat de la matriu de similituds VH, els punts se superposen i això provoca que no s'obtingui realment la informació correcta, ja que si veiem quantes observacions hi ha en aquest "punt", tenim 7 observacions:
-
-```{r "punto"}
-vh_punto1 = vh_mds[between(vh_mds$Dim.1, -0.6, 0) & between(vh_mds$Dim.2, 0, 0.05),]
-
-vh_punto1 %>% 
-  arrange(Dim.1) %>% 
-  slice_tail(n = 7)
-
-```
-
-
-Llavors aquest "punt" efectivament, és un grup distingit. En canvi, si estudiem aquest punt distingit amb valor en la segona coordenada aproximadament de $-0.05$, tenim que només hi ha una observació i per tant sembla que pertany al grup format per la banda vertical que es troba damunt d'aquest punt.
-
-Per tant, podem diferenciar 6 grups distints, que corresponen a les bandes verticals i al "punt" que hem comentat. A partir del phylum, veiem que realment els grups que hi ha són 14, llavors a partir d'aquestes similituds no estem obtenint correctament l'agrupació adequada. A més, si ens fixem en el grup 106, corresponent al grup dels artròpodes, veiem que pertanyen en fins a 4 grups diferents, amb això podem deduir que en efecte, estem perdent informació amb la matriu de similituds VH. D'altra banda, el grup 101, corresponent al grup dels vertebrats estan separats en dos grups. En conclusió, no obtenim una bona agrupació.
-
-Ara repetirem el procés amb les matrius de similituds obtingudes amb els dos mètodes restants:
-
-- **Métode SP**
+- **Mètode SP**
 
 Al igual que abans, en primer lloc, calcularem la matriu de similituds obtinguda amb el mètode SP i mostrem les relacions entre els 15 primers grafs:
 
 ```{r}
-SP = read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixSP.txt")
+SP <- read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixSP.txt")
 head(SP[,1:10], n= 10)
 ```
-
 
 A diferència de la matriu de similituds VH, sembla que aquí hi ha una millor distinció, per veurer si és cert, calculem la matriu de distàncies i mostrem les 5 primeres observacions:
 
@@ -195,7 +159,6 @@ SP_mds <- cmdscale(dist_SP, k = 2) %>%
 SP_mds %>% 
   slice_head(n = 5)
 ```
-
 
 Finalment, mostrarem el gràfic de la matriu de similitud generada pel **mètode SP** diferenciant pel grup d'animals que pertanyen segons el seu phylum amb el mateix mètode anterior.
 
