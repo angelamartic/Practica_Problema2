@@ -26,6 +26,10 @@ library(factoextra)
 library(magrittr)
 ```
 
+# Enllaç al github
+
+https://github.com/angelamartic/Practica_Problema2
+
 # Problema 2
 
 **El metabolisme es caracteritza per reaccions químiques vinculades entre si, creant una complexa estructura de xarxa. Una representació simplificada del metabolisme, que anomenem xarxa metabòlica abstracta, és un graf en què les vies metabòliques són nodes i hi ha una aresta entre dos nodes si les corresponents vies comparteixen un o més compostos.**
