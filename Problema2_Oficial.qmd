@@ -44,7 +44,7 @@ library(factoextra)
 L'enunciat ens presenta tres matrius de similituds entre grafs.
 El que farem serà estudiar les distàncies obtingudes de les similituds entre VH, SP, PM, i les representarem a partir de dues coordenades principals.Per finalitzar, compararem l'agrupació obtinguda i l'agrupació que s'obté amb el phylum, coloretjant els puns en aquesta darrera agrupació.
 
-```{r}
+```{r, results = 'hide'}
 #Llegim la taula on es troben les dades del phylum de cada animal
 phylum <- read.csv("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/fileListANIMAL_phylum.txt", 
 sep = " ", header = F)
@@ -57,7 +57,7 @@ phylum %>% glimpse()
 
 En primer lloc, calcularem la matriu de similitud del kernel Vertex histogram
 
-```{r}
+```{r, results = 'hide'}
 #Aquesta és la matriu de similitud del kernel Vertex histogram
 VH <- read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixVH.txt")
 VH %>% head(VH[,1:10], n= 10)
@@ -81,7 +81,7 @@ Anem ara a fer la representació.
 Com hem dit abans, *VH* és una matriu de similitud, per tant tenim que $q_{ii}=1$, $q_{ij}=q_{ji}$ i $0\leq q_{ij}\leq$.
 Llavors podem calcular la seva matriu de distàncies associada:
 
-```{r matriz distancias vh}
+```{r matriz distancias vh, results = 'hide'}
 dVH <- 2*(1-VH) %>% sqrt()
 dVH %>% head(dVH[,1:10], n= 10)
 ```
@@ -161,6 +161,7 @@ Anem ara a fer la representació.
 Tornant a la matriu de similituds, a diferència de la matriu de similituds VH, sembla que aquí hi ha una millor distinció, per veurer si és cert, calculem la matriu de distàncies i mostrem les 10 primeres observacions:
 
 ```{r}
+dSP <- 2 *( 1 - SP ) %>% sqrt ()
 dSP = sqrt(2*(1-SP))
 head(dSP[,1:10], n= 10)
 ```
@@ -209,7 +210,7 @@ A més, les agrupacions indiquen similituds entre categories de \*Phylum en func
 
 -   **Métode PM:**
 
-```{r}
+```{r, results = 'hide'}
 #Aquesta és la matriu de similitud del kernel Pyramid Match
 PM <- read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixPM.txt")
 PM %>% head()
@@ -231,7 +232,7 @@ Anem ara a fer la representació.
 
 Emprant el mateix procediment que abans, calculem la matriu de distàncies:
 
-```{r matriz distancias pm}
+```{r matriz distancias pm, results = 'hide'}
 dPM = sqrt(2*(1-PM))
 dPM %>% head()
 ```
