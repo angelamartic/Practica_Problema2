@@ -21,33 +21,79 @@ library(readr)
 library(janitor) 
 library(viridis) 
 library(ggcorrplot)
+library(MVA)
+library(magrittr)
+library(dplyr)
+library(ggpubr)
+library(factoextra)
 ```
 
-## Enunciat del problema
+# Enunciat del problema
 ::: {.fragment}
-Aquest text apareix al segon clic.
-:::
-El metabolisme es caracteritza per reaccions químiques vinculades entre si, creant una complexa estructura de xarxa. Una representació simplificada del metabolisme, que anomenem xarxa metabòlica abstracta, és un graf en què les vies metabòliques són nodes i hi ha una aresta entre dos nodes si les corresponents vies comparteixen un o més compostos.
 
-Per explorar els potencials i els límits d’una representació tan bàsica, hem fet servir tres tipus de kernels (distàncies entre grafs):
+El metabolisme es caracteritza per reaccions químiques vinculades entre si, creant una complexa estructura de xarxa. Una representació simplificada del metabolisme, que anomenem xarxa metabòlica abstracta, és un graf en què les vies metabòliques són nodes i hi ha una aresta entre dos nodes si les corresponents vies comparteixen un o més compostos.
+:::
+
+
+::: {.fragment}
 
 - VH (Vertex histogram).
 
 - SP (Shortest-Path).
 
 - PM (Pyramid Match).
+:::
 
+::: {.fragment}
 La pràctica consisteix a representar gràficament (amb només 2 coordenades principals) les matrius de similitud generades per cada nucli pintant els punts d’acord amb el grup d’animals d’acord amb el seu phylum.
+:::
 
-## Objectiu i metodologia
+## Phylum
+```{r}
+#Llegim la taula on es troben les dades del phylum de cada animal
+phylum <- read.csv("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/fileListANIMAL_phylum.txt", 
+sep = " ", header = F)
+#Posam nom a cada variable
+colnames(phylum) <- c("Animal", "phylum")
+head(phylum, n= 7)
+length(phylum$Animal)
+```
+
+## Vertex histogram
+
+```{r}
+#Aquesta és la matriu de similitud del kernel Vertex histogram
+VH <- read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixVH.txt")
+head(VH[,1:7], n= 7)
+```
+
+
+
+
+## Shortest path
+```{r}
+#Aquesta és la matriu de similitud del kernel Shortest-Path
+SP <- read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixSP.txt")
+head(SP[,1:7], n= 7)
+```
+
+
+
+## Pyramid Match
+```{r}
+#Aquesta és la matriu de similitud del kernel Pyramid Match
+PM <- read.table("Datos para el ejercicio 2 de la práctica 6 (ACP y MDS)-20241213/ANIMALS-matrixPM.txt")
+head(PM[,1:7], n= 7)
+```
+
+# Objectiu i metodologia
 ::: {.fragment}
 El principal **objectiu** és representar gràficament les matrius de similitud generades per tres tipus de kernels (VH, SP, PM) mitjançant MDS (2D).
 :::
 
-
 ::: {.fragment}
 **Metodologia**:
-:::
+
 1. Carregar dades (matrius de similituds i informació dels phylums).
 
 2. Calcular matrius de distàncies a partir de les similituds.
@@ -55,11 +101,146 @@ El principal **objectiu** és representar gràficament les matrius de similitud 
 3. Aplicar escalament multidimensional (MDS).
 
 4. Representar gràficament els resultats.
+:::
 
-## Primeres dades
-- **Phylum**
+
+# Mètode VH
+
 ```{r}
-
+# ACP per a la matriu de similitud
+acpSP <- prcomp(SP, center = TRUE, scale. = TRUE)
+fviz_eig(acpSP, addlabels = TRUE, ylim=c(0,90)) +
+  ggtitle("Comprovació ACP del VH")+
+  theme_minimal()
 ```
 
+
+## Gràfic MDS del VH
+
+```{r}
+dVH <- 2*(1-VH) %>% sqrt()
+#dVH %>% head(dVH[,1:10], n= 10)
+mdsVH <- dVH %>% cmdscale(k = 2) %>% as_tibble()
+```
+```{r}
+colnames(mdsVH) <- c("Dim.1","Dim.2")
+#Juntam els dos data frames per poder clasificar per colors
+mdsVH <- cbind(mdsVH,phylum)
+#Necessitam tenir el phylum com a factor per a que r no faci una escala numèrica
+mdsVH$phylum <- mdsVH$phylum %>% as.factor()
+#Feim el diagrama
+ggplot(mdsVH, aes(x = Dim.1, y = Dim.2, color = phylum)) + geom_point(size = 2) +  
+  labs(x = "Dimensió 1", y = "Dimensió 2", color = "Phylum") +
+  theme_minimal() 
+```
+
+## Gràfic MDS del VH amb perturbació aleatòria
+```{r}
+ggplot(mdsVH, aes(x = Dim.1, y = Dim.2, color = phylum)) + geom_point(size = 2) +  
+  labs(x = "Dimensió 1", y = "Dimensió 2", color = "Phylum") +
+  theme_minimal() + geom_jitter(width = 0.02, height = 0.02)
+```
+
+
+# Métode SP
+
+```{r}
+# ACP per a la matriu de similitud
+acpSP <- prcomp(SP, center = TRUE, scale. = TRUE)
+fviz_eig(acpSP, addlabels = TRUE, ylim=c(0,90)) +
+    ggtitle("Comprovació ACP del SP")+
+  theme_minimal()
+```
+
+## Gràfic MDS del SP
+
+```{r}
+dSP <- 2 *( 1 - SP ) %>% sqrt ()
+dSP = sqrt(2*(1-SP))
+#head(dSP[,1:10], n= 10)
+
+#Aplicam l'escalament multidimensional
+mdsSP <- dSP %>% cmdscale(k = 2) %>% as_tibble()
+#mdsSP %>% head(mdsSP[,1:5], n= 5)
+```
+
+```{r}
+colnames(mdsSP) <- c("Dim.1","Dim.2")
+#Juntam els dos data frames per poder clasificar per colors
+mdsSP <- cbind(mdsSP,phylum)
+#Necessitam tenir el phylum com a factor per a que r no faci una escala numèrica
+mdsSP$phylum <- mdsSP$phylum %>% as.factor()
+#Feim el diagrama
+ggplot(mdsSP, aes(x = Dim.1, y = Dim.2, color = phylum)) + geom_point(size = 2) +  
+  labs(x = "Dimensió 1", y = "Dimensió 2", color = "Phylum") +
+  theme_minimal() 
+```
+
+## Gràfic MDS del SP amb perturbació aleatòria
+
+```{r}
+ggplot(mdsSP, aes(x = Dim.1, y = Dim.2, color = phylum)) + geom_point(size = 2) +  
+  labs(x = "Dimensió 1", y = "Dimensió 2", color = "Phylum") +
+  theme_minimal() + geom_jitter(width = 0.02, height = 0.02)
+```
+
+
+# Métode PM
+
+```{r}
+
+# Análisis de componentes principales (ACP)
+acpPM <- prcomp(PM, center = TRUE, scale. = TRUE)
+
+# Gráfico de varianza explicada
+library(factoextra)
+fviz_eig(acpPM, addlabels = TRUE, ylim = c(0, 90)) +
+    ggtitle("Comprovació ACP del PM")+
+  theme_minimal()
+```
+
+## Gràfic MDS del PM
+
+```{r}
+# Cálculo de la matriz de distancias
+library(dplyr)
+dPM <- sqrt(2 * (1 - PM))
+#dPM %>% head()
+
+# Escalamiento multidimensional (MDS) con dos coordenadas principales
+library(tibble)
+mdsPM <- cmdscale(dPM, k = 2) %>% as_tibble()
+#mdsPM %>% head()
+```
+
+```{r}
+#library(ggplot2)
+colnames(mdsPM) <- c("Dim.1", "Dim.2")
+mdsPM <- bind_cols(mdsPM, phylum)
+mdsPM$phylum <- as.factor(mdsPM$phylum)
+
+ggplot(mdsPM, aes(x = Dim.1, y = Dim.2, color = phylum)) +
+  geom_point(size = 2) +  
+  labs(, 
+       x = "Dimensió 1", y = "Dimensió 2", color = "Phylum") +
+  theme_minimal()
+```
+
+
+## Conclusions:
+::: {.fragment}
+- La representació bidimensional no captura tota la informació dels kernels.
+:::
+
+::: {.fragment}
+- SP i PM són millors que VH per separar grups, però cap mètode és completament efectiu.
+:::
+
+::: {.fragment}
+### Recomanació:
+:::
+
+::: {.fragment}
+Explorar altres tècniques de reducció de dimensionalitat o combinar mètodes.
+:::
 
